@@ -1,6 +1,6 @@
 {
-	"id": "librarian",
-	"name": "Librarian",
+	"id": "orion",
+	"name": "Orion",
 	"version": "1.0.0",
 	"minAppVersion": "1.0.0",
 	"description": "A lightweight vault manager",
