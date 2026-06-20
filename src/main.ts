@@ -48,13 +48,14 @@ export default class VaultManagerPlugin extends Plugin {
 
 	onunload() {}
 
-	async loadSettings() {
-		this.settings = Object.assign(
-			{},
-			DEFAULT_SETTINGS,
-			await this.loadData()
-		);
-	}
+async loadSettings() {
+	const data = (await this.loadData()) as Partial<VaultManagerSettings> | null;
+
+	this.settings = {
+		...DEFAULT_SETTINGS,
+		...(data ?? {}),
+	};
+}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
@@ -95,9 +96,7 @@ class VaultManagerSettingTab extends PluginSettingTab {
 
 		containerEl.empty();
 
-		containerEl.createEl("h2", {
-			text: "Vault Manager Settings",
-		});
+		new Setting(containerEl).setName("Vault manager").setHeading();
 
 		new Setting(containerEl)
 			.setName("Stale note threshold")
@@ -165,15 +164,15 @@ class StaleNotesModal extends Modal {
 				href: "#",
 			});
 
-			link.addEventListener("click", async (e) => {
+			link.addEventListener("click", (e) => {
 				e.preventDefault();
 
 				const leaf =
 					this.app.workspace.getLeaf();
 
-				await leaf.openFile(file);
-
-				this.close();
+				void leaf.openFile(file).then(() => {
+					this.close();
+				});
 			});
 
 			row.createEl("div", {
