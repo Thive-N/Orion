@@ -10,10 +10,12 @@ import {
 
 interface VaultManagerSettings {
 	staleDays: number;
-}
+	excludeStatus: string[];
+};
 
 const DEFAULT_SETTINGS: VaultManagerSettings = {
 	staleDays: 7,
+	excludeStatus: ["FINAL", "ARCHIVED"],
 };
 
 export default class VaultManagerPlugin extends Plugin {
@@ -48,14 +50,14 @@ export default class VaultManagerPlugin extends Plugin {
 
 	onunload() {}
 
-async loadSettings() {
-	const data = (await this.loadData()) as Partial<VaultManagerSettings> | null;
+	async loadSettings() {
+		const data = (await this.loadData()) as Partial<VaultManagerSettings> | null;
 
-	this.settings = {
-		...DEFAULT_SETTINGS,
-		...(data ?? {}),
-	};
-}
+		this.settings = {
+			...DEFAULT_SETTINGS,
+			...(data ?? {}),
+		};
+	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
@@ -64,19 +66,20 @@ async loadSettings() {
 	private getStaleNotes(): TFile[] {
 		const cutoff =
 			Date.now() -
-			this.settings.staleDays *
-				24 *
-				60 *
-				60 *
-				1000;
+			this.settings.staleDays * 24 * 60 * 60 * 1000;
 
-		return this.app.vault
-			.getMarkdownFiles()
-			.filter((file) => file.stat.mtime < cutoff)
-			.sort(
-				(a, b) =>
-					a.stat.mtime - b.stat.mtime
-			);
+		return this.app.vault.getMarkdownFiles().filter((file) => {
+				const cache = this.app.metadataCache.getFileCache(file);
+				const status = cache?.frontmatter?.status as unknown;
+
+				if(typeof status === "string" && !this.settings.excludeStatus.includes(status.toUpperCase())) {
+						return false;
+					};
+
+				return (
+					file.stat.mtime < cutoff
+				);
+			}).sort((a, b) => a.stat.mtime - b.stat.mtime);
 	}
 }
 
@@ -117,6 +120,30 @@ class VaultManagerSettingTab extends PluginSettingTab {
 								days;
 							await this.plugin.saveSettings();
 						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Exclude status")
+			.setDesc(
+				"Comma-separated list of statuses to exclude from stale note check, case-insensitive"
+			)
+			.addText((text) =>
+				text
+					// eslint-disable-next-line obsidianmd/ui/sentence-case
+					.setPlaceholder("final,archived")
+					.setValue(
+						this.plugin.settings.excludeStatus.join(
+							","
+						)
+					)
+					.onChange(async (value) => {
+						const statuses = value
+							.split(",")
+							.map((s) => s.trim().toUpperCase())
+							.filter((s) => s.length > 0);
+						this.plugin.settings.excludeStatus = statuses;
+						await this.plugin.saveSettings();
 					})
 			);
 	}
