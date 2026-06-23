@@ -23,7 +23,7 @@ Orion is designed to evolve into a full vault health system, including:
 1. Clone this repository into your vault’s plugin folder:
 
 ```bash
-.git clone <repo-url>
+git clone https://github.com/Thive-N/Orion
 cd orion
 npm install
 ````
