@@ -1,15 +1,5 @@
-import { VaultNote } from "../core/VaultScanner";
-export type IssueType =
-    | "stale"
-    | "orphan"
-    | "broken-link"
-    | "empty";
+import { VaultIssue, VaultNote } from "../core/types";
 
-export interface VaultIssue {
-    type: IssueType;
-    note: VaultNote;
-    message: string;
-}
 
 export class StaleNoteAnalyzer {
     constructor(

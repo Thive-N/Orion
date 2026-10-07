@@ -3,13 +3,7 @@ import {
 	TFile,
 } from "obsidian";
 
-// represents a note in the vault
-export interface VaultNote {
-    path: string;
-    name: string;
-    modified: number;
-}
-
+import { VaultNote } from "./types";
 
 export class VaultScanner {
     constructor(private app: App) {}
