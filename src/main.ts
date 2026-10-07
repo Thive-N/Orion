@@ -3,20 +3,12 @@ import {
 	Modal,
 	Notice,
 	Plugin,
-	PluginSettingTab,
-	Setting,
 	TFile,
 } from "obsidian";
 
-interface VaultManagerSettings {
-	staleDays: number;
-	excludeStatus: string[];
-};
+import { VaultManagerSettings, VaultManagerSettingTab, DEFAULT_SETTINGS } from "./settings";
 
-const DEFAULT_SETTINGS: VaultManagerSettings = {
-	staleDays: 7,
-	excludeStatus: ["FINAL", "ARCHIVED"],
-};
+
 
 export default class VaultManagerPlugin extends Plugin {
 	settings: VaultManagerSettings = DEFAULT_SETTINGS;
@@ -48,7 +40,7 @@ export default class VaultManagerPlugin extends Plugin {
 		});
 	}
 
-	onunload() {}
+	onunload() { }
 
 	async loadSettings() {
 		const data = (await this.loadData()) as Partial<VaultManagerSettings> | null;
@@ -69,85 +61,20 @@ export default class VaultManagerPlugin extends Plugin {
 			this.settings.staleDays * 24 * 60 * 60 * 1000;
 
 		return this.app.vault.getMarkdownFiles().filter((file) => {
-				const cache = this.app.metadataCache.getFileCache(file);
-				const status = cache?.frontmatter?.status as unknown;
+			const cache = this.app.metadataCache.getFileCache(file);
+			const status = cache?.frontmatter?.status as unknown;
 
-				if(typeof status === "string" && !this.settings.excludeStatus.includes(status.toUpperCase())) {
-						return false;
-					};
+			if (typeof status === "string" && !this.settings.excludeStatus.includes(status.toUpperCase())) {
+				return false;
+			};
 
-				return (
-					file.stat.mtime < cutoff
-				);
-			}).sort((a, b) => a.stat.mtime - b.stat.mtime);
+			return (
+				file.stat.mtime < cutoff
+			);
+		}).sort((a, b) => a.stat.mtime - b.stat.mtime);
 	}
 }
 
-class VaultManagerSettingTab extends PluginSettingTab {
-	plugin: VaultManagerPlugin;
-
-	constructor(
-		app: App,
-		plugin: VaultManagerPlugin
-	) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl).setName("Vault manager").setHeading();
-
-		new Setting(containerEl)
-			.setName("Stale note threshold")
-			.setDesc(
-				"Number of days before a note is considered stale"
-			)
-			.addText((text) =>
-				text
-					.setPlaceholder("7")
-					.setValue(
-						this.plugin.settings.staleDays.toString()
-					)
-					.onChange(async (value) => {
-						const days = parseInt(value);
-
-						if (!isNaN(days) && days > 0) {
-							this.plugin.settings.staleDays =
-								days;
-							await this.plugin.saveSettings();
-						}
-					})
-			);
-
-		new Setting(containerEl)
-			.setName("Exclude status")
-			.setDesc(
-				"Comma-separated list of statuses to exclude from stale note check, case-insensitive"
-			)
-			.addText((text) =>
-				text
-					// eslint-disable-next-line obsidianmd/ui/sentence-case
-					.setPlaceholder("final,archived")
-					.setValue(
-						this.plugin.settings.excludeStatus.join(
-							","
-						)
-					)
-					.onChange(async (value) => {
-						const statuses = value
-							.split(",")
-							.map((s) => s.trim().toUpperCase())
-							.filter((s) => s.length > 0);
-						this.plugin.settings.excludeStatus = statuses;
-						await this.plugin.saveSettings();
-					})
-			);
-	}
-}
 
 class StaleNotesModal extends Modal {
 	private files: TFile[];
@@ -183,7 +110,7 @@ class StaleNotesModal extends Modal {
 
 			const ageDays = Math.floor(
 				(Date.now() - file.stat.mtime) /
-					(1000 * 60 * 60 * 24)
+				(1000 * 60 * 60 * 24)
 			);
 
 			const link = row.createEl("a", {
