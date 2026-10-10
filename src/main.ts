@@ -7,6 +7,9 @@ import {
 } from "obsidian";
 
 import { VaultManagerSettings, VaultManagerSettingTab, DEFAULT_SETTINGS } from "./settings";
+import { VaultScanner } from "./core/VaultScanner";
+import { StaleNoteAnalyzer } from "./analyzer/StaleNoteAnalyzer";
+import { VaultIssue } from "./core/types";
 
 
 
@@ -23,8 +26,8 @@ export default class VaultManagerPlugin extends Plugin {
 		this.addCommand({
 			id: "check-stale-notes",
 			name: "Check stale notes",
-			callback: () => {
-				const staleNotes = this.getStaleNotes();
+			callback: async () => {
+				const staleNotes = await this.getStaleNotes();
 
 				if (staleNotes.length === 0) {
 					new Notice("No stale notes found");
@@ -55,34 +58,25 @@ export default class VaultManagerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	private getStaleNotes(): TFile[] {
-		const cutoff =
-			Date.now() -
-			this.settings.staleDays * 24 * 60 * 60 * 1000;
+	private async getStaleNotes(): Promise<VaultIssue[]> {
+		const scanner = new VaultScanner(this.app);
+		const files = scanner.scan();
 
-		return this.app.vault.getMarkdownFiles().filter((file) => {
-			const cache = this.app.metadataCache.getFileCache(file);
-			const status = cache?.frontmatter?.status as unknown;
+		const staleNotes = new StaleNoteAnalyzer(this.settings.staleDays).analyze(await files);
 
-			if (typeof status === "string" && !this.settings.excludeStatus.includes(status.toUpperCase())) {
-				return false;
-			};
+		return staleNotes;
 
-			return (
-				file.stat.mtime < cutoff
-			);
-		}).sort((a, b) => a.stat.mtime - b.stat.mtime);
 	}
 }
 
 
 class StaleNotesModal extends Modal {
-	private files: TFile[];
+	private files: VaultIssue[];
 	private staleDays: number;
 
 	constructor(
 		app: App,
-		files: TFile[],
+		files: VaultIssue[],
 		staleDays: number
 	) {
 		super(app);
@@ -108,38 +102,38 @@ class StaleNotesModal extends Modal {
 				cls: "vault-manager-stale-note",
 			});
 
-			const ageDays = Math.floor(
-				(Date.now() - file.stat.mtime) /
-				(1000 * 60 * 60 * 24)
-			);
+			// const ageDays = Math.floor(
+			// 	(Date.now() - file.stat.mtime) /
+			// 	(1000 * 60 * 60 * 24)
+			// );
 
-			const link = row.createEl("a", {
-				text: file.path,
-				href: "#",
-			});
+			// const link = row.createEl("a", {
+			// 	text: file.path,
+			// 	href: "#",
+			// });
 
-			link.addEventListener("click", (e) => {
-				e.preventDefault();
+		// 	link.addEventListener("click", (e) => {
+		// 		e.preventDefault();
 
-				const leaf =
-					this.app.workspace.getLeaf();
+		// 		const leaf =
+		// 			this.app.workspace.getLeaf();
 
-				void leaf.openFile(file).then(() => {
-					this.close();
-				});
-			});
+		// 		void leaf.openFile(file).then(() => {
+		// 			this.close();
+		// 		});
+		// 	});
 
-			row.createEl("div", {
-				text: `Last modified: ${new Date(
-					file.stat.mtime
-				).toLocaleString()}`,
-			});
+		// 	row.createEl("div", {
+		// 		text: `Last modified: ${new Date(
+		// 			file.stat.mtime
+		// 		).toLocaleString()}`,
+		// 	});
 
-			row.createEl("div", {
-				text: `${ageDays} days old`,
-			});
+		// 	row.createEl("div", {
+		// 		text: `${ageDays} days old`,
+		// 	});
 
-			row.createEl("hr");
+		// 	row.createEl("hr");
 		});
 	}
 
