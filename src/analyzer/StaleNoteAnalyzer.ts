@@ -1,4 +1,4 @@
-import { VaultIssue, VaultNote } from "../core/types";
+import { StaleNoteIssue, VaultNote } from "../core/types";
 
 
 export class StaleNoteAnalyzer {
@@ -6,7 +6,7 @@ export class StaleNoteAnalyzer {
         private readonly staleAfterDays: number
     ) {}
 
-    analyze(notes: VaultNote[]): VaultIssue[] {
+    analyze(notes: VaultNote[]): StaleNoteIssue[] {
         const now = Date.now();
 
         const staleAfterMs =
@@ -17,6 +17,7 @@ export class StaleNoteAnalyzer {
                 return now - note.modified > staleAfterMs;
             })
             .map(note => ({
+                ageDays: Math.floor((now - note.modified) / (1000 * 60 * 60 * 24)),
                 type: "stale",
                 note,
                 message: `Note has not been modified for ${this.staleAfterDays} days`

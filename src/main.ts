@@ -3,13 +3,12 @@ import {
 	Modal,
 	Notice,
 	Plugin,
-	TFile,
 } from "obsidian";
 
 import { VaultManagerSettings, VaultManagerSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { VaultScanner } from "./core/VaultScanner";
 import { StaleNoteAnalyzer } from "./analyzer/StaleNoteAnalyzer";
-import { VaultIssue } from "./core/types";
+import { StaleNoteIssue } from "./core/types";
 
 
 
@@ -58,7 +57,7 @@ export default class VaultManagerPlugin extends Plugin {
 		await this.saveData(this.settings);
 	}
 
-	private async getStaleNotes(): Promise<VaultIssue[]> {
+	private async getStaleNotes(): Promise<StaleNoteIssue[]> {
 		const scanner = new VaultScanner(this.app);
 		const files = scanner.scan();
 
@@ -71,12 +70,12 @@ export default class VaultManagerPlugin extends Plugin {
 
 
 class StaleNotesModal extends Modal {
-	private files: VaultIssue[];
+	private files: StaleNoteIssue[];
 	private staleDays: number;
 
 	constructor(
 		app: App,
-		files: VaultIssue[],
+		files: StaleNoteIssue[],
 		staleDays: number
 	) {
 		super(app);
@@ -102,38 +101,35 @@ class StaleNotesModal extends Modal {
 				cls: "vault-manager-stale-note",
 			});
 
-			// const ageDays = Math.floor(
-			// 	(Date.now() - file.stat.mtime) /
-			// 	(1000 * 60 * 60 * 24)
-			// );
+			const ageDays = file.ageDays;
 
-			// const link = row.createEl("a", {
-			// 	text: file.path,
-			// 	href: "#",
+			const link = row.createEl("a", {
+				text: file.note.name,
+				href: "#",
+			});
+
+			// link.addEventListener("click", (e) => {
+			// 	e.preventDefault();
+
+			// 	const leaf =
+			// 		this.app.workspace.getLeaf();
+
+			// 	void leaf.openFile(file.note).then(() => {
+			// 		this.close();
+			// 	});
 			// });
 
-		// 	link.addEventListener("click", (e) => {
-		// 		e.preventDefault();
+			row.createEl("div", {
+				text: `Last modified: ${new Date(
+					file.note.modified
+				).toLocaleString()}`,
+			});
 
-		// 		const leaf =
-		// 			this.app.workspace.getLeaf();
+			row.createEl("div", {
+				text: `${ageDays} days old`,
+			});
 
-		// 		void leaf.openFile(file).then(() => {
-		// 			this.close();
-		// 		});
-		// 	});
-
-		// 	row.createEl("div", {
-		// 		text: `Last modified: ${new Date(
-		// 			file.stat.mtime
-		// 		).toLocaleString()}`,
-		// 	});
-
-		// 	row.createEl("div", {
-		// 		text: `${ageDays} days old`,
-		// 	});
-
-		// 	row.createEl("hr");
+			row.createEl("hr");
 		});
 	}
 
