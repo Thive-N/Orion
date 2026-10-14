@@ -1,7 +1,10 @@
+import { TFile } from "obsidian";
+
 export interface VaultNote {
     path: string;
     name: string;
     modified: number;
+    tfile: TFile;
 }
 
 interface BaseVaultIssue {

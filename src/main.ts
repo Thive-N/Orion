@@ -108,16 +108,16 @@ class StaleNotesModal extends Modal {
 				href: "#",
 			});
 
-			// link.addEventListener("click", (e) => {
-			// 	e.preventDefault();
+			link.addEventListener("click", (e) => {
+				e.preventDefault();
 
-			// 	const leaf =
-			// 		this.app.workspace.getLeaf();
+				const leaf =
+					this.app.workspace.getLeaf();
 
-			// 	void leaf.openFile(file.note).then(() => {
-			// 		this.close();
-			// 	});
-			// });
+				void leaf.openFile(file.note.tfile).then(() => {
+					this.close();
+				});
+			});
 
 			row.createEl("div", {
 				text: `Last modified: ${new Date(

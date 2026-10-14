@@ -25,6 +25,7 @@ export class VaultScanner {
         // const content = await this.app.vault.read(file);
 
         return {
+            tfile: file,
             path: file.path,
             name: file.basename,
             modified: file.stat.mtime,
