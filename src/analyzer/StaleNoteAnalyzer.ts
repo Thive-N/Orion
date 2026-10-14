@@ -1,6 +1,5 @@
 import { StaleNoteIssue, VaultNote } from "../core/types";
 
-
 export class StaleNoteAnalyzer {
     constructor(
         private readonly staleAfterDays: number
