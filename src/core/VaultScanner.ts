@@ -4,6 +4,7 @@ import {
 } from "obsidian";
 
 import { VaultNote } from "./types";
+import { isFinalized } from "../utils/noteStatus";
 
 export class VaultScanner {
     constructor(private app: App) {}
@@ -29,6 +30,7 @@ export class VaultScanner {
             path: file.path,
             name: file.basename,
             modified: file.stat.mtime,
+            status: isFinalized(file, this.app) ? "final" : undefined,
         };
     }
 }

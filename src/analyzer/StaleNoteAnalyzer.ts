@@ -15,6 +15,9 @@ export class StaleNoteAnalyzer {
             .filter(note => {
                 return now - note.modified > staleAfterMs;
             })
+            .filter(note => {
+                return note.status !== "final";
+            })
             .map(note => ({
                 ageDays: Math.floor((now - note.modified) / (1000 * 60 * 60 * 24)),
                 type: "stale",

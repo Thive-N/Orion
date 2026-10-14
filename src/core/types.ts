@@ -4,6 +4,7 @@ export interface VaultNote {
     path: string;
     name: string;
     modified: number;
+    status?: string;
     tfile: TFile;
 }
 

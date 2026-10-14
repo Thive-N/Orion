@@ -1,6 +1,7 @@
 import {
 	Notice,
 	Plugin,
+	TFile,
 } from "obsidian";
 
 import {StaleNotesModal} from "./ui/StaleNotesModal";
@@ -8,6 +9,7 @@ import { VaultManagerSettings, VaultManagerSettingTab, DEFAULT_SETTINGS } from "
 import { VaultScanner } from "./core/VaultScanner";
 import { StaleNoteAnalyzer } from "./analyzer/StaleNoteAnalyzer";
 import { StaleNoteIssue } from "./core/types";
+import { isFinalized } from "./utils/noteStatus";
 
 
 
@@ -39,7 +41,36 @@ export default class VaultManagerPlugin extends Plugin {
 				).open();
 			},
 		});
+
+		this.addCommand({
+    id: "open-random-finalized-note",
+    name: "Open random finalized note",
+    callback: async () => {
+        const files = this.app.vault.getMarkdownFiles();
+
+        const finalized = files.filter(file =>
+            isFinalized(file, this.app),
+        );
+
+        if (finalized.length === 0) {
+            new Notice("No finalized notes found.");
+            return;
+        }
+
+        const index = Math.floor(Math.random() * finalized.length);
+        const file = finalized[index];
+
+        if (!file) {
+            new Notice("Failed to open a finalized note.");
+            return;
+        }
+
+        await this.app.workspace.getLeaf(false).openFile(file);
+    },
+});
 	}
+
+	
 
 	onunload() { }
 
