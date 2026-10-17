@@ -4,12 +4,14 @@ import {
 	TFile,
 } from "obsidian";
 
-import {StaleNotesModal} from "./ui/StaleNotesModal";
+import { StaleNotesModal } from "./ui/StaleNotesModal";
 import { VaultManagerSettings, VaultManagerSettingTab, DEFAULT_SETTINGS } from "./settings";
 import { VaultScanner } from "./core/VaultScanner";
 import { StaleNoteAnalyzer } from "./analyzer/StaleNoteAnalyzer";
 import { StaleNoteIssue } from "./core/types";
 import { isFinalized } from "./utils/noteStatus";
+import { OrphanNoteAnalyzer } from "./analyzer/OrphanNoteAnalyzer";
+import { OrphanNotesModal } from "./ui/OrphanNotesModal";
 
 
 
@@ -43,34 +45,55 @@ export default class VaultManagerPlugin extends Plugin {
 		});
 
 		this.addCommand({
-    id: "open-random-finalized-note",
-    name: "Open random finalized note",
-    callback: async () => {
-        const files = this.app.vault.getMarkdownFiles();
+			id: "open-random-finalized-note",
+			name: "Open random finalized note",
+			callback: async () => {
+				const files = this.app.vault.getMarkdownFiles();
 
-        const finalized = files.filter(file =>
-            isFinalized(file, this.app),
-        );
+				const finalized = files.filter(file =>
+					isFinalized(file, this.app),
+				);
 
-        if (finalized.length === 0) {
-            new Notice("No finalized notes found.");
-            return;
-        }
+				if (finalized.length === 0) {
+					new Notice("No finalized notes found.");
+					return;
+				}
 
-        const index = Math.floor(Math.random() * finalized.length);
-        const file = finalized[index];
+				const index = Math.floor(Math.random() * finalized.length);
+				const file = finalized[index];
 
-        if (!file) {
-            new Notice("Failed to open a finalized note.");
-            return;
-        }
+				if (!file) {
+					new Notice("Failed to open a finalized note.");
+					return;
+				}
 
-        await this.app.workspace.getLeaf(false).openFile(file);
-    },
-});
+				await this.app.workspace.getLeaf(false).openFile(file);
+			},
+		});
+
+		this.addCommand({
+			id: "check-orphan-notes",
+			name: "Check orphan notes",
+			callback: async () => {
+				const scanner = new VaultScanner(this.app);
+				const files = await scanner.scan();
+
+				const orphanNotes = new OrphanNoteAnalyzer().analyze(files, this.app.metadataCache.resolvedLinks);
+
+				if (orphanNotes.length === 0) {
+					new Notice("No orphan notes found");
+					return;
+				}
+
+				new OrphanNotesModal(
+					this.app,
+					orphanNotes,
+				).open();
+			},
+		});
 	}
 
-	
+
 
 	onunload() { }
 
